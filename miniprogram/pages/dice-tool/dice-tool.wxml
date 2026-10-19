@@ -1,0 +1,225 @@
+<view class="page page-dice-tool">
+  <view class="dice-tool-stage {{isScorekeeperMode ? 'scorekeeper-mode' : ''}}">
+    <view class="dice-tool-head">
+      <view>
+        <view class="dice-tool-title">{{pageTitle}}</view>
+        <view class="dice-tool-sub">{{pageSubTitle}}</view>
+      </view>
+      <view class="dice-tool-count" wx:if="{{!isScorekeeperMode || scorekeeperReady}}">已摇 {{rollCount}} 次</view>
+    </view>
+
+    <view wx:if="{{isScorekeeperMode && !scorekeeperReady}}" class="scorekeeper-setup-card">
+      <view class="scorekeeper-setup-title">基础设置</view>
+      <view class="scorekeeper-setup-grid">
+        <view class="scorekeeper-field">
+          <view class="scorekeeper-field-label">玩家数</view>
+          <input class="scorekeeper-field-input" type="number" value="{{scorekeeperSetupPlayerCount}}" bindinput="onScorekeeperPlayerCountInput" />
+        </view>
+        <view class="scorekeeper-field">
+          <view class="scorekeeper-field-label">起始分数</view>
+          <input class="scorekeeper-field-input" type="number" value="{{scorekeeperSetupStartScore}}" bindinput="onScorekeeperStartScoreInput" />
+        </view>
+      </view>
+      <view class="scorekeeper-setup-tip">先点头像可更换对应玩家的代表图，开始后这些头像会直接沿用到计分板。</view>
+      <view class="scorekeeper-setup-player-grid">
+        <view wx:for="{{scorekeeperSetupPlayers}}" wx:key="id" class="scorekeeper-setup-player" data-index="{{index}}" bindtap="openScorekeeperAvatarPicker">
+          <view class="scorekeeper-setup-player-avatar-wrap">
+            <image wx:if="{{item.avatarUrl}}" class="scorekeeper-setup-player-avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+            <view wx:else class="scorekeeper-setup-player-avatar fallback">{{item.number}}</view>
+          </view>
+          <view class="scorekeeper-setup-player-number">{{item.number}}号</view>
+        </view>
+      </view>
+      <view class="scorekeeper-start-btn" bindtap="startScorekeeper">开始计分</view>
+    </view>
+
+    <view wx:if="{{!isScorekeeperMode || scorekeeperReady}}" class="{{isScorekeeperMode ? 'scorekeeper-layout' : ''}}">
+      <view wx:if="{{isScorekeeperMode}}" class="scorekeeper-dice-column">
+        <view class="dice-display-card scorekeeper-dice-card {{rolling ? 'rolling' : ''}}" bindtap="rollDice">
+          <view class="dice-ring"></view>
+          <image class="dice-main-image" src="{{currentDiceImage}}" mode="widthFix" />
+          <view class="dice-glow"></view>
+          <view class="dice-result-number">{{rolling ? '...' : currentValue}}</view>
+        </view>
+
+        <view class="dice-action-row">
+          <view class="dice-roll-btn {{rolling ? 'disabled' : ''}}" bindtap="rollDice">
+            {{rolling ? '摇动中' : (rollCount ? '再摇一次' : '开始摇色')}}
+          </view>
+          <view class="dice-audio-btn" bindtap="playCurrentAudio">播放点数</view>
+        </view>
+
+        <view class="dice-history-panel">
+          <view class="history-head inline">
+            <view class="history-title">最近结果</view>
+            <view class="history-list inline" wx:if="{{recentHistory.length}}">
+              <view wx:for="{{recentHistory}}" wx:key="id" class="history-item">
+                <image class="history-dice" src="{{item.image}}" mode="aspectFit" />
+                <view>{{item.value}} 点</view>
+              </view>
+            </view>
+          </view>
+          <view class="history-empty" wx:if="{{!recentHistory.length}}">还没有摇出结果</view>
+        </view>
+      </view>
+
+      <view wx:if="{{!isScorekeeperMode}}" class="dice-display-card {{rolling ? 'rolling' : ''}}" bindtap="rollDice">
+        <view class="dice-ring"></view>
+        <image class="dice-main-image" src="{{currentDiceImage}}" mode="widthFix" />
+        <view class="dice-glow"></view>
+        <view class="dice-result-number">{{rolling ? '...' : currentValue}}</view>
+      </view>
+
+      <view wx:if="{{!isScorekeeperMode}}" class="dice-status">
+        <view class="dice-status-title">{{statusTitle}}</view>
+        <view class="dice-status-desc">{{statusDesc}}</view>
+      </view>
+
+      <view wx:if="{{!isScorekeeperMode}}" class="dice-action-row">
+        <view class="dice-roll-btn {{rolling ? 'disabled' : ''}}" bindtap="rollDice">
+          {{rolling ? '摇动中' : (rollCount ? '再摇一次' : '开始摇色')}}
+        </view>
+        <view class="dice-audio-btn" bindtap="playCurrentAudio">播放点数</view>
+      </view>
+
+      <view wx:if="{{!isScorekeeperMode}}" class="dice-history-panel">
+        <view class="history-head inline">
+          <view class="history-title">最近结果</view>
+          <view class="history-list inline" wx:if="{{recentHistory.length}}">
+            <view wx:for="{{recentHistory}}" wx:key="id" class="history-item">
+              <image class="history-dice" src="{{item.image}}" mode="aspectFit" />
+              <view>{{item.value}} 点</view>
+            </view>
+          </view>
+        </view>
+        <view class="history-empty" wx:if="{{!recentHistory.length}}">还没有摇出结果</view>
+      </view>
+
+      <view wx:if="{{isScorekeeperMode}}" class="scorekeeper-board-column">
+        <view class="scorekeeper-board-card">
+          <view class="scorekeeper-board-head">
+            <view class="scorekeeper-board-title">实时看板</view>
+            <view class="scorekeeper-board-sub">点玩家图标进入加减分</view>
+          </view>
+          <view class="scorekeeper-board-grid">
+            <view wx:for="{{scorePlayers}}" wx:key="id" class="scorekeeper-player {{selectedScorePlayerIndex === index ? 'active' : ''}}" data-index="{{index}}" bindtap="openScorePlayerPanel">
+              <view class="scorekeeper-player-icon-wrap">
+                <image wx:if="{{item.avatarUrl}}" class="scorekeeper-player-avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+                <view wx:else class="scorekeeper-player-avatar fallback">{{index + 1}}</view>
+              </view>
+              <view class="scorekeeper-player-name">{{index + 1}}号</view>
+              <view class="scorekeeper-player-score">{{item.score}}</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="scorekeeper-panel-mask" wx:if="{{scorePanelVisible}}" bindtap="closeScorePlayerPanel">
+    <view class="scorekeeper-panel" catchtap="noop">
+      <view class="scorekeeper-panel-head">
+        <view>
+          <view class="scorekeeper-panel-title">玩家{{selectedScorePlayerIndex + 1}}</view>
+          <view class="scorekeeper-panel-sub">当前分数：{{selectedScorePlayer.score}}</view>
+          <view class="scorekeeper-panel-tip">{{scorePanelTip}}</view>
+        </view>
+        <view class="scorekeeper-panel-close" bindtap="closeScorePlayerPanel">关闭</view>
+      </view>
+
+      <view class="scorekeeper-mode-row">
+        <view class="scorekeeper-mode-btn {{scoreAdjustMode === 'add' ? 'active' : ''}} {{scoreKeyActive === 'add' ? 'pressed' : ''}}" data-mode="add" bindtap="onScoreAdjustModeTap">加分</view>
+        <view class="scorekeeper-mode-btn {{scoreAdjustMode === 'subtract' ? 'active' : ''}} {{scoreKeyActive === 'subtract' ? 'pressed' : ''}}" data-mode="subtract" bindtap="onScoreAdjustModeTap">减分</view>
+        <view class="scorekeeper-mode-btn {{scoreAdjustMode === 'transfer' ? 'active' : ''}} {{scoreKeyActive === 'transfer' ? 'pressed' : ''}}" data-mode="transfer" bindtap="onScoreAdjustModeTap">转给玩家</view>
+      </view>
+
+      <view wx:if="{{scoreAdjustMode === 'transfer'}}" class="scorekeeper-transfer-block">
+        <view class="scorekeeper-input-label">转给哪位玩家</view>
+        <view class="scorekeeper-transfer-list">
+          <view wx:for="{{scoreTransferTargets}}" wx:key="index" class="scorekeeper-transfer-item {{scoreTransferTargetIndex === item.index ? 'active' : ''}}" data-index="{{item.index}}" bindtap="onScoreTransferTargetTap">
+            <view class="scorekeeper-transfer-name">玩家{{item.number}}</view>
+            <view class="scorekeeper-transfer-score">{{item.score}}</view>
+          </view>
+        </view>
+      </view>
+
+      <view class="scorekeeper-calculator">
+        <view class="scorekeeper-calculator-display">
+          <view class="scorekeeper-calculator-label">输入分数</view>
+          <view class="scorekeeper-calculator-value">
+            <text wx:if="{{scoreAdjustMode === 'subtract'}}">-</text>{{scoreInputDigits}}
+          </view>
+        </view>
+        <view class="scorekeeper-keypad">
+          <view class="scorekeeper-key {{scoreKeyActive === '7' ? 'pressed' : ''}}" data-digit="7" bindtap="onScorePanelDigitTap">7</view>
+          <view class="scorekeeper-key {{scoreKeyActive === '8' ? 'pressed' : ''}}" data-digit="8" bindtap="onScorePanelDigitTap">8</view>
+          <view class="scorekeeper-key {{scoreKeyActive === '9' ? 'pressed' : ''}}" data-digit="9" bindtap="onScorePanelDigitTap">9</view>
+          <view class="scorekeeper-key {{scoreKeyActive === '4' ? 'pressed' : ''}}" data-digit="4" bindtap="onScorePanelDigitTap">4</view>
+          <view class="scorekeeper-key {{scoreKeyActive === '5' ? 'pressed' : ''}}" data-digit="5" bindtap="onScorePanelDigitTap">5</view>
+          <view class="scorekeeper-key {{scoreKeyActive === '6' ? 'pressed' : ''}}" data-digit="6" bindtap="onScorePanelDigitTap">6</view>
+          <view class="scorekeeper-key {{scoreKeyActive === '1' ? 'pressed' : ''}}" data-digit="1" bindtap="onScorePanelDigitTap">1</view>
+          <view class="scorekeeper-key {{scoreKeyActive === '2' ? 'pressed' : ''}}" data-digit="2" bindtap="onScorePanelDigitTap">2</view>
+          <view class="scorekeeper-key {{scoreKeyActive === '3' ? 'pressed' : ''}}" data-digit="3" bindtap="onScorePanelDigitTap">3</view>
+          <view class="scorekeeper-key scorekeeper-key-zero {{scoreKeyActive === '0' ? 'pressed' : ''}}" data-digit="0" bindtap="onScorePanelDigitTap">0</view>
+          <view class="scorekeeper-key scorekeeper-key-undo {{scoreKeyActive === 'undo' ? 'pressed' : ''}}" bindtap="onScorePanelUndoTap">撤销</view>
+          <view class="scorekeeper-key scorekeeper-key-confirm {{scoreKeyActive === 'confirm' ? 'pressed' : ''}}" bindtap="onScorePanelConfirmTap">确认</view>
+        </view>
+      </view>
+
+      <view class="scorekeeper-preview-card">
+        <view class="scorekeeper-preview-row">
+          <view>原分</view>
+          <view>{{scorePreviewBase}}</view>
+        </view>
+        <view wx:if="{{scoreAdjustMode === 'transfer'}}" class="scorekeeper-preview-row">
+          <view>转给</view>
+          <view wx:if="{{scoreTransferTargetIndex >= 0}}">玩家{{scoreTransferTargetIndex + 1}}</view>
+          <view wx:else>请选择玩家</view>
+        </view>
+        <view class="scorekeeper-preview-row">
+          <view>变化</view>
+          <view>{{scorePreviewLabel}}</view>
+        </view>
+        <view class="scorekeeper-preview-row strong">
+          <view>最终分</view>
+          <view>{{scorePreviewFinal}}</view>
+        </view>
+        <view wx:if="{{scoreAdjustMode === 'transfer'}}" class="scorekeeper-preview-row">
+          <view>对方最终分</view>
+          <view>{{scorePreviewTargetFinal}}</view>
+        </view>
+      </view>
+
+      <view class="scorekeeper-history-panel">
+        <view class="scorekeeper-history-head">
+          <view class="scorekeeper-history-title">操作记录</view>
+          <view class="scorekeeper-history-sub">显示最近几次分数变化</view>
+        </view>
+        <view class="scorekeeper-history-empty" wx:if="{{!selectedScorePlayer.history || !selectedScorePlayer.history.length}}">还没有操作记录</view>
+        <view class="scorekeeper-history-list" wx:else>
+          <view wx:for="{{selectedScorePlayer.history}}" wx:key="id" class="scorekeeper-history-item">
+            <view class="scorekeeper-history-text">{{item.text}}</view>
+            <view class="scorekeeper-history-meta">{{item.time}} · 结果 {{item.currentScore}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="scorekeeper-avatar-mask" wx:if="{{scoreAvatarPickerVisible}}" bindtap="closeScorekeeperAvatarPicker">
+    <view class="scorekeeper-avatar-picker" catchtap="noop">
+      <view class="scorekeeper-avatar-picker-head">
+        <view>
+          <view class="scorekeeper-avatar-picker-title">选择{{scoreAvatarPickerPlayerIndex + 1}}号头像</view>
+          <view class="scorekeeper-avatar-picker-sub">从现有素材里挑一张作为该玩家的代表图。</view>
+        </view>
+        <view class="scorekeeper-avatar-picker-close" bindtap="closeScorekeeperAvatarPicker">关闭</view>
+      </view>
+      <view class="scorekeeper-avatar-picker-grid">
+        <view wx:for="{{scorekeeperAvatarPool}}" wx:key="id" class="scorekeeper-avatar-option" data-index="{{index}}" bindtap="pickScorekeeperAvatar">
+          <image class="scorekeeper-avatar-option-image" src="{{item.url}}" mode="aspectFill" />
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,397 @@
+<view class="page page-room" style="{{pageBackgroundStyle}}">
+  <view class="stage">
+    <view class="top-plaque" wx:if="{{room}}">
+      <view class="row">
+        <view>
+          <view class="title">{{theme.title}}对局控制台</view>
+          <view class="subtle">本地对局 · {{roundText}}</view>
+        </view>
+        <button class="btn light compact" bindtap="showMenu">菜单</button>
+      </view>
+    </view>
+
+    <view class="panel room-tabs" wx:if="{{room}}">
+      <view class="tab-item {{activeTab === 'console' ? 'active' : ''}}" data-tab="console" bindtap="switchRoomTab">操作台</view>
+      <view class="tab-item {{activeTab === 'players' ? 'active' : ''}}" data-tab="players" bindtap="switchRoomTab">玩家数值</view>
+      <view class="tab-item {{activeTab === 'cities' ? 'active' : ''}}" data-tab="cities" bindtap="switchRoomTab">{{labels.city || '景点'}}</view>
+    </view>
+
+    <view class="console-tab" wx:if="{{activeTab === 'console'}}">
+    <view class="panel dice-console">
+      <view class="console-actions">
+        <button class="btn light action-side" disabled="{{gameFinished}}" bindtap="drawEvent">
+          <image class="btn-icon" src="{{iconEventSrc}}" mode="aspectFill" />
+          <view class="action-label">抽事件</view>
+        </button>
+        <button class="btn secondary action-roll {{diceRolling ? 'rolling' : ''}}" disabled="{{gameFinished || diceRolling}}" bindtap="rollDice">
+          <image class="roll-icon {{diceRolling ? 'rolling-face' : ''}}" wx:if="{{diceArtSrc}}" src="{{diceArtSrc}}" mode="aspectFit" />
+          <view class="roll-face {{diceRolling ? 'rolling-face' : ''}}" wx:else>骰</view>
+          <view class="roll-label">{{diceMode === 'manual' ? '线下点数' : '掷点'}}</view>
+          <view class="roll-sub">轮到：{{currentPlayerLabel || "待入席"}}</view>
+        </button>
+        <button class="btn primary action-side" disabled="{{gameFinished || !canEndTurn}}" bindtap="nextStep">
+          <image class="btn-icon" src="{{iconDoneSrc}}" mode="aspectFill" />
+          <view class="action-label">{{completeButtonText}}</view>
+        </button>
+      </view>
+    </view>
+
+    <view class="panel dice-result-panel" wx:if="{{diceResult}}">
+      <view class="dice-result-head">
+        <image class="dice-result-art" wx:if="{{diceArtSrc}}" src="{{diceArtSrc}}" mode="aspectFit" />
+        <view class="dice-face empty result-face" wx:else>骰</view>
+        <view class="dice-result-main">
+          <view class="title small">点数 {{diceResult.total}} 点</view>
+          <view class="subtle" wx:if="{{diceResult.flight_mode}}">飞行棋辅助 · {{diceResult.extra_roll ? '掷到 6 可再掷' : '请线下移动棋子'}}</view>
+          <view class="subtle" wx:else>实际移动 {{diceResult.moveTotal || diceResult.total}} 格 · 位置 {{diceResult.oldPosition}} → {{diceResult.position}}</view>
+        </view>
+      </view>
+      <view class="settlement-card flight-roll-card" wx:if="{{diceResult.flight_mode}}">{{diceResult.flight_prompt}}</view>
+      <view class="settlement-card flight-warn-card" wx:if="{{diceResult.third_six_reset}}">连续三个 6 已触发：除已到终点外，当前玩家其余棋子全部返回机场。</view>
+      <view class="settlement-card" wx:if="{{diceResult.moveAdjust}}">本回合生效移动修正：{{diceResult.moveAdjust > 0 ? '+' : ''}}{{diceResult.moveAdjust}}，骰子 {{diceResult.total}} 点，实际前进 {{diceResult.moveTotal}} 格。</view>
+      <view class="settlement-card" wx:if="{{diceResult.loopRewardSilver}}">经过起点 {{diceResult.loopCount}} 次，{{labels.silverStat || '银两'}} +{{diceResult.loopRewardSilver}}</view>
+      <view class="dice-city-tip result-tip" wx:if="{{diceResult.passed_city_tip || diceResult.passed_city_names}}">{{diceResult.passed_city_tip || diceResult.passed_city_names}}</view>
+    </view>
+
+    <view class="panel flight-console-panel" wx:if="{{isFlightTheme}}">
+      <view class="title small">当前玩家棋子记录</view>
+      <view class="hint-copy">线下移动实体棋子后，在这里标记状态。终点必须刚好到达；点数超过终点时，请先走到终点再倒着走。</view>
+      <view class="flight-rule-tags">
+        <text>起飞：{{flightConfig.start_mode === 'six' ? '6 起飞' : (flightConfig.start_mode === 'six_or_one' ? '6 或 1 起飞' : '任意点起飞')}}</text>
+        <text>{{flightConfig.collision_mode === 'on' ? '撞机开启' : '不撞机'}}</text>
+        <text>景点：{{flightConfig.spot_mode === 'fixed' ? '固定' : (flightConfig.spot_mode === 'random' ? '随机' : '混合')}}</text>
+      </view>
+      <view class="flight-piece-card" wx:for="{{currentFlightPieces}}" wx:key="index">
+        <view class="flight-piece-head">
+          <view>
+            <view class="flight-piece-name">{{item.name}}</view>
+            <view class="subtle">{{item.status_text || '机场'}} · {{item.position_text || '线下棋盘为准'}}</view>
+          </view>
+          <view class="flight-piece-status">{{item.status_text || '机场'}}</view>
+        </view>
+        <view class="flight-piece-actions">
+          <view class="flight-piece-btn" data-player-id="{{room.current_player_id}}" data-piece-index="{{index}}" data-status="airport" bindtap="updateFlightPiece">回机场</view>
+          <view class="flight-piece-btn" data-player-id="{{room.current_player_id}}" data-piece-index="{{index}}" data-status="active" bindtap="updateFlightPiece">已起飞</view>
+          <view class="flight-piece-btn" data-player-id="{{room.current_player_id}}" data-piece-index="{{index}}" data-status="final" bindtap="updateFlightPiece">终点跑道</view>
+          <view class="flight-piece-btn primary" data-player-id="{{room.current_player_id}}" data-piece-index="{{index}}" data-status="finished" bindtap="updateFlightPiece">到终点</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="panel event-panel" wx:if="{{eventCard}}">
+      <image class="event-art" wx:if="{{eventCard.preview}}" src="{{eventCard.preview}}" mode="aspectFit" />
+      <view class="title small">{{eventCard.title}}</view>
+      <view class="subtle">{{eventCard.auto_triggered ? '移动后自动触发 · ' : ''}}{{eventCard.rarity}} · {{eventCard.trigger_condition}}</view>
+      <view class="event-text">{{eventCard.effect_desc}}</view>
+      <view class="card">{{eventCard.board_action}}</view>
+      <view class="settlement-card" wx:if="{{eventCard.settlement_desc}}">{{eventCard.settlement_desc}}</view>
+      <button class="btn secondary event-voice-btn" wx:if="{{eventCard.sound_path}}" bindtap="playCurrentEventVoice">播放语音</button>
+    </view>
+
+    </view>
+
+    <view class="players-tab" wx:if="{{activeTab === 'players'}}">
+      <view class="panel player-stats-panel">
+        <view class="title small">玩家现有数值</view>
+        <view class="stat-card {{room.current_player_id === item.id ? 'current' : ''}}" wx:for="{{playerStats}}" wx:key="id" data-id="{{item.id}}" bindtap="openPlayerDetail">
+          <view class="stat-head">
+            <view>
+              <view class="stat-name">{{item.seat_no}}号 {{item.player_name}}</view>
+              <view class="subtle">{{item.faction}} · {{room.current_player_id === item.id ? '当前行动' : '待行动'}}</view>
+            </view>
+            <view class="seat-badge">{{item.seat_no}}</view>
+          </view>
+          <view class="metric-grid">
+            <view class="metric"><view class="metric-value">{{item.grain}}</view><view class="metric-label">{{labels.grainStat || '体力'}}</view></view>
+            <view class="metric"><view class="metric-value">{{item.silver}}</view><view class="metric-label">{{labels.silverStat || '银两'}}</view></view>
+            <view class="metric"><view class="metric-value">{{item.prestige}}</view><view class="metric-label">{{labels.prestigeStat || '人气'}}</view></view>
+            <view class="metric"><view class="metric-value">{{item.battle}}</view><view class="metric-label">{{labels.battleStat || '打卡'}}</view></view>
+            <view class="metric"><view class="metric-value">{{item.position}}</view><view class="metric-label">{{labels.positionStat || '位置'}}</view></view>
+          </view>
+          <view class="flight-player-line" wx:if="{{isFlightTheme}}">{{item.flight_color_name}} · 已到终点 {{item.finished_pieces}} / 4 · 景点印章 {{item.passport_stamps}}</view>
+          <view class="token-line">
+            <text>移动修正 {{item.move_adjust}}</text>
+            <text>暂停 {{item.paused_turns}}</text>
+            <text>重抽 {{item.redraw_tokens}}</text>
+            <text>{{labels.tollFreeLabel || '免游玩费'}} {{item.toll_free_tokens}}</text>
+            <text>争夺 {{item.siege_tokens}}</text>
+          </view>
+          <view class="ally-line">{{labels.ally || '收藏'}} {{item.ally_count}}：{{item.ally_names}}</view>
+          <view class="ally-strip" wx:if="{{item.ally_cards.length}}">
+            <view class="ally-chip" wx:for="{{item.ally_cards}}" wx:for-item="ally" wx:key="id" catchtap="openCharacterDetail" data-player-id="{{item.id}}" data-character-id="{{ally.id}}">
+              <image class="ally-thumb" src="{{ally.image_path}}" mode="aspectFill" />
+              <view class="ally-thumb-name">{{ally.name}}</view>
+            </view>
+          </view>
+          <view class="stat-foot">摇骰 {{item.dice_count}} 次 · 抽事件 {{item.event_count}} 次 · 最近移动 {{item.last_dice}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="cities-tab" wx:if="{{activeTab === 'cities'}}">
+      <view class="panel city-panel">
+        <view class="title small">{{labels.city || '景点'}}{{isFlightTheme ? '打卡与介绍' : '购买与收费'}}</view>
+        <view class="hint-copy" wx:if="{{isFlightTheme}}">这里用于查看世界历史景点。线下棋子落到固定景点格，或抽到随机景点事件时，可播放介绍并记录景点印章。</view>
+        <view class="hint-copy" wx:else>这里仅用于查看{{labels.city || '景点'}}信息。玩家必须移动到对应格子，才会弹出购买、升级、缴费或争夺操作。</view>
+        <view class="city-card {{item.hasOwner ? 'owned' : ''}}" wx:for="{{cityStats}}" wx:key="id">
+          <view class="city-head">
+            <view>
+              <view class="stat-name">{{item.name}}</view>
+              <view class="subtle" wx:if="{{isFlightTheme}}">建议第 {{item.position}} 格附近打卡 · {{item.region}}</view>
+              <view class="subtle" wx:else>第 {{item.position}} 格 · {{labels.ownerDisplay || '拥有者'}}：{{item.ownerName}}</view>
+            </view>
+            <view class="city-price" wx:if="{{isFlightTheme}}">打卡</view>
+            <view class="city-price" wx:else>Lv.{{item.level}}</view>
+          </view>
+          <image class="city-card-art" wx:if="{{item.image_path}}" src="{{item.image_path}}" mode="aspectFill" />
+          <view class="city-owner-panel {{item.hasOwner ? 'has-owner' : ''}}" wx:if="{{!isFlightTheme}}">
+            <view class="owner-label">归属</view>
+            <view class="owner-name">{{item.ownerTag}}</view>
+          </view>
+          <view class="city-desc">{{item.desc}}</view>
+          <view class="city-meta" wx:if="{{!isFlightTheme}}">
+            <text>购买 {{item.price}}</text>
+            <text>他人经过付 {{item.toll}} {{labels.silverStat || '银两'}}给{{labels.ownerDisplay || '拥有者'}}</text>
+            <text>{{labels.defenseStat || '排队热度'}} {{item.defense}}</text>
+            <text>升级 {{item.upgrade_cost}}</text>
+          </view>
+          <view class="city-list-note" wx:if="{{isFlightTheme}}">落到景点格时，可按线下棋盘确认打卡；详细历史介绍可在景点列表页查看并播放语音。</view>
+          <view class="city-list-note" wx:else>到达第 {{item.position}} 格后，操作台会自动弹出可执行操作。</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="panel wood-panel">
+      <view class="title small">回合记录</view>
+      <view class="log-row" wx:for="{{logs}}" wx:key="id">
+        <view>{{item.content}}</view>
+        <view class="subtle">{{item.created_at}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="modal-mask victory-mask" wx:if="{{victoryModalVisible}}" bindtap="closeVictoryModal">
+    <view class="victory-modal" catchtap="noop">
+      <view class="victory-rays"></view>
+      <view class="victory-confetti c1"></view>
+      <view class="victory-confetti c2"></view>
+      <view class="victory-confetti c3"></view>
+      <view class="victory-confetti c4"></view>
+      <image class="victory-art" src="{{victoryImageSrc}}" mode="aspectFit" />
+      <view class="victory-title">恭喜获胜</view>
+      <view class="victory-name">{{winnerName}}</view>
+      <view class="victory-copy">{{theme.victoryCopy || '本局胜负已定，新的胜利者在此刻诞生。'}}</view>
+      <button class="btn primary modal-btn" bindtap="closeVictoryModal">{{theme.victoryButtonText || '查看结果'}}</button>
+    </view>
+  </view>
+
+  <view class="movement-float" wx:if="{{movementPromptVisible}}">
+    <view class="movement-card">
+      <view class="movement-dice">骰</view>
+      <view class="movement-text">{{movementPromptText}}</view>
+    </view>
+  </view>
+
+  <view class="card-effect-float" wx:if="{{cardEffectVisible && cardEffect}}">
+    <view class="card-effect-burst"></view>
+    <view class="card-effect-card">
+      <image class="card-effect-art" wx:if="{{cardEffect.image_path}}" src="{{cardEffect.image_path}}" mode="aspectFill" />
+      <view class="card-effect-info">
+        <view class="card-effect-kicker">{{labels.character || '卡片'}}效果生效</view>
+        <view class="card-effect-name">{{cardEffect.name}}</view>
+        <view class="card-effect-title">{{cardEffect.title}}</view>
+        <view class="card-effect-desc" wx:if="{{cardEffect.desc}}">{{cardEffect.desc}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="modal-mask" wx:if="{{turnSettlementVisible && turnSettlement}}" bindtap="closeTurnSettlement">
+    <view class="settlement-modal" catchtap="noop">
+      <view class="modal-head">
+        <view>
+          <view class="title small">{{turnSettlement.title}}</view>
+          <view class="subtle">刚结束：{{turnSettlement.endedPlayerName}}</view>
+        </view>
+        <button class="btn light compact close-btn" bindtap="closeTurnSettlement">关闭</button>
+      </view>
+      <view class="settlement-card">{{turnSettlement.summary}}</view>
+      <view class="settlement-leader">{{labels.silverStat || '银两'}}领先：{{turnSettlement.silverLeaderName}} · {{turnSettlement.silverLeaderValue}}</view>
+      <view class="settlement-rank-row" wx:for="{{turnSettlement.rows}}" wx:key="id">
+        <view class="rank-badge">{{item.rank}}</view>
+        <view class="rank-main">
+          <view class="rank-name">{{item.name}}</view>
+          <view class="rank-sub">{{labels.city || '景点'}} {{item.cityCount}} · {{labels.character || '卡片'}} {{item.allyCount}} · {{labels.prestigeStat || '人气'}} {{item.prestige}}</view>
+        </view>
+        <view class="rank-silver">{{item.silver}} {{labels.silverStat || '银两'}}</view>
+      </view>
+      <button class="btn primary modal-btn" bindtap="closeTurnSettlement">{{turnSettlement.finished ? '查看胜利' : '继续游戏'}}</button>
+    </view>
+  </view>
+
+  <view class="modal-mask" wx:if="{{eventModalVisible && eventCard}}" bindtap="closeEventModal">
+    <view class="event-modal" catchtap="noop">
+      <image class="event-modal-art" wx:if="{{eventCard.preview}}" src="{{eventCard.preview}}" mode="widthFix" />
+      <view class="title small">{{eventCard.title}}</view>
+      <view class="subtle">{{eventCard.auto_triggered ? '移动后自动触发 · ' : ''}}{{eventCard.rarity}} · {{eventCard.trigger_condition}}</view>
+      <view class="modal-actions modal-actions-top">
+        <button class="btn secondary compact" wx:if="{{eventCard.sound_path}}" bindtap="playCurrentEventVoice">播放语音</button>
+        <button class="btn light compact" wx:if="{{eventCharacter}}" catchtap="playEventCharacterVoice">播放{{labels.cardVoiceLabel || '人物语音'}}</button>
+        <button class="btn primary compact" bindtap="closeEventModal">知道了</button>
+      </view>
+      <view class="event-text">{{eventCard.effect_desc}}</view>
+      <view class="settlement-card" wx:if="{{eventCard.settlement_desc}}">{{eventCard.settlement_desc}}</view>
+      <view class="event-character-reward" wx:if="{{eventCharacter}}" catchtap="openEventCharacterDetail">
+        <image class="reward-character-art" src="{{eventCharacter.image_path}}" mode="aspectFill" />
+        <view class="reward-character-info">
+          <view class="reward-label">获得{{labels.character || '卡片'}}</view>
+          <view class="reward-name">{{eventCharacter.name}}</view>
+          <view class="reward-sub">{{eventCharacter.tier}} · {{eventCharacter.faction}} · {{eventCharacter.role_type}}</view>
+          <view class="reward-quote">“{{eventCharacter.quote_text}}”</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="modal-mask" wx:if="{{cityModalVisible && selectedCity}}" bindtap="closeCityModal">
+    <view class="city-modal" catchtap="noop">
+      <view class="modal-head">
+        <view>
+          <view class="title small">{{selectedCity.name}}</view>
+          <view class="subtle">第 {{selectedCity.position}} 格 · Lv.{{selectedCity.level}}</view>
+        </view>
+        <button class="btn light compact close-btn" bindtap="closeCityModal">关闭</button>
+      </view>
+      <view class="modal-actions city-modal-actions modal-actions-top">
+        <button class="btn secondary compact" wx:if="{{selectedCity.sound_path}}" bindtap="playSelectedCityVoice">播放介绍</button>
+        <button class="btn secondary compact {{!selectedCity.canBuy ? 'btn-warn' : ''}}" wx:if="{{!selectedCity.hasOwner}}" disabled="{{gameFinished}}" data-id="{{selectedCity.id}}" bindtap="buyCity">购买（{{selectedCity.price}}{{labels.silverStat || '银两'}}）</button>
+        <button class="btn secondary compact" wx:if="{{selectedCity.canUpgrade}}" disabled="{{gameFinished}}" data-id="{{selectedCity.id}}" bindtap="upgradeCity">升级（{{selectedCity.upgrade_cost}}{{labels.silverStat || '银两'}}）</button>
+        <button class="btn light compact" wx:if="{{selectedCity.hasOwner && !selectedCity.canUpgrade}}" disabled="{{!selectedCity.canPayToll || gameFinished}}" data-id="{{selectedCity.id}}" bindtap="payCityToll">交费（{{selectedCity.toll}}{{labels.silverStat || '银两'}}）</button>
+        <button class="btn light compact" wx:if="{{selectedCity.canAttack}}" disabled="{{gameFinished || attackBusy}}" data-id="{{selectedCity.id}}" bindtap="attackCity">{{labels.contestAction || '争夺'}}（{{labels.defenseStat || '排队热度'}}{{selectedCity.defense}}）</button>
+      </view>
+      <image class="city-modal-art" wx:if="{{selectedCity.image_path}}" src="{{selectedCity.image_path}}" mode="widthFix" />
+      <view class="city-owner-panel modal-owner {{selectedCity.hasOwner ? 'has-owner' : ''}}">
+        <view class="owner-label">当前归属</view>
+        <view class="owner-name">{{selectedCity.ownerTag}}</view>
+      </view>
+      <view class="city-desc">{{selectedCity.desc}}</view>
+      <view class="city-history" wx:if="{{selectedCity.history_desc}}">{{selectedCity.history_desc}}</view>
+      <view class="settlement-card" wx:if="{{!selectedCity.hasOwner}}">当前{{labels.city || '景点'}}尚未购买，花费 {{selectedCity.price}} {{labels.silverStat || '银两'}}可购买；购买后会记录归属，并增加 1 点{{labels.prestigeStat || '人气'}}。其他玩家经过时，需支付 {{selectedCity.toll}} {{labels.silverStat || '银两'}}给拥有者。</view>
+      <view class="settlement-card" wx:elif="{{selectedCity.canAttack}}">这是其他玩家的{{labels.city || '景点'}}，可以支付 {{selectedCity.toll}} {{labels.silverStat || '银两'}}，或派当前{{labels.forceStat || '热度'}}最高的{{labels.character || '卡片'}}发起{{labels.contestAction || '争夺'}}。成功免交{{labels.tollLabel || '过路费'}}，失败交双倍费用。</view>
+      <view class="settlement-card" wx:else>这是己方{{labels.city || '景点'}}，本次无需{{labels.tollLabel || '过路费'}}；花费 {{selectedCity.upgrade_cost}} {{labels.silverStat || '银两'}}可升级，提高{{labels.defenseStat || '排队热度'}}和他人经过时需支付的费用。</view>
+      <view class="upgrade-preview-card modal-upgrade" wx:if="{{selectedCity.canUpgrade}}">
+        <view class="upgrade-title">升级需要 {{selectedCity.upgradePreview.cost}} {{labels.silverStat || '银两'}}</view>
+        <view class="upgrade-copy">升级后立即提升{{labels.defenseStat || '排队热度'}}，并提高他人经过时需要支付给你的{{labels.tollLabel || '过路费'}}。</view>
+        <view class="upgrade-grid">
+          <view><text>等级</text><strong>{{selectedCity.upgradePreview.levelBefore}} → {{selectedCity.upgradePreview.levelAfter}}</strong></view>
+          <view><text>{{labels.tollLabel || '过路费'}}</text><strong>{{selectedCity.upgradePreview.tollBefore}} → {{selectedCity.upgradePreview.tollAfter}}</strong></view>
+          <view><text>{{labels.defenseStat || '排队热度'}}</text><strong>{{selectedCity.upgradePreview.defenseBefore}} → {{selectedCity.upgradePreview.defenseAfter}}</strong></view>
+          <view><text>下次升级</text><strong>{{selectedCity.upgradePreview.nextUpgradeCost}} {{labels.silverStat || '银两'}}</strong></view>
+        </view>
+      </view>
+      <view class="attack-preview" wx:if="{{selectedCity.canAttack}}">
+        <view class="attack-preview-title">争夺预估</view>
+        <view class="attack-preview-grid">
+          <view><text>{{labels.attackerLabel || '出战'}}</text><strong>{{selectedCity.attackPreview.allyName}}</strong></view>
+          <view><text>{{labels.forceStat || '热度'}}</text><strong>{{selectedCity.attackPreview.force}}</strong></view>
+          <view><text>{{labels.contestBonusStat || ((labels.contestAction || '争夺') + '加成')}}</text><strong>{{selectedCity.attackPreview.siegeBonus}}</strong></view>
+          <view><text>{{labels.defenseStat || '排队热度'}}</text><strong>{{selectedCity.attackPreview.defense}}</strong></view>
+          <view><text>优势差</text><strong>{{selectedCity.attackPreview.diff}}</strong></view>
+          <view><text>预估胜率</text><strong>{{selectedCity.attackPreview.winChance}}%</strong></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="modal-mask attack-mask" wx:if="{{attackModalVisible && currentAttack}}" bindtap="closeAttackModal">
+    <view class="attack-modal" catchtap="noop">
+      <image class="attack-art" src="{{attackStage === 'result' ? currentAttack.result_image : currentAttack.process_image}}" mode="aspectFit" />
+      <view class="attack-title">{{attackStage === 'result' ? (currentAttack.outcome === 'success' ? (labels.contestAction || '争夺') + '成功' : (labels.contestAction || '争夺') + '失败') : (labels.contestAction || '争夺') + '进行中'}}</view>
+      <view class="attack-sub">{{currentAttack.playerName}} {{labels.attackAction || '争夺'}} {{currentAttack.cityName}}</view>
+      <view class="attack-dice-board">
+        <view class="attack-dice-card {{currentAttack.attackerRolled ? 'rolled' : ''}}">
+          <text>{{labels.attackerDiceLabel || '挑战点数'}}</text>
+          <strong>{{currentAttack.attackDice || '?'}}</strong>
+        </view>
+        <view class="attack-dice-card defender {{currentAttack.defenderRolled ? 'rolled' : ''}}">
+          <text>{{labels.defenderDiceLabel || '守擂点数'}}</text>
+          <strong>{{currentAttack.defenseDice || '?'}}</strong>
+        </view>
+      </view>
+      <view class="attack-formula" wx:if="{{currentAttack.ally}}">
+        {{labels.attackerLabel || '挑战方'}}：{{currentAttack.ally.name}} · {{currentAttack.attackDice || '?'}} × {{labels.forceStat || '热度'}} {{currentAttack.force}} + {{labels.contestBonusStat || ((labels.contestAction || '争夺') + '加成')}} {{currentAttack.siegeBonus}} = {{currentAttack.attackValue || '待掷点'}}
+      </view>
+      <view class="attack-formula" wx:else>当前没有可参与{{labels.contestAction || '争夺'}}的{{labels.character || '卡片'}}，{{labels.attackPowerStat || '饭量值'}}为 0</view>
+      <view class="attack-defense">{{labels.defenderLabel || '守擂方'}}：基础{{labels.defenseStat || '排队热度'}} {{currentAttack.defenseBase}} + {{currentAttack.defenseDice || '?'}} × 20 = {{currentAttack.defenseValue}}</view>
+      <view class="attack-chance">{{labels.contestAction || '争夺'}}前预估胜率 {{currentAttack.chance}}%</view>
+      <view class="attack-roll-actions" wx:if="{{attackStage !== 'result'}}">
+        <button class="btn secondary compact" disabled="{{currentAttack.attackerRolled}}" data-side="attacker" bindtap="rollAttackSide">{{labels.attackerLabel || '挑战方'}}掷点</button>
+        <button class="btn light compact" disabled="{{currentAttack.defenderRolled}}" data-side="defender" bindtap="rollAttackSide">{{labels.defenderLabel || '守擂方'}}掷点</button>
+      </view>
+      <view class="settlement-card">{{attackStage === 'result' ? currentAttack.reason : '对抗已开始，正在判定争夺结果...'}}</view>
+      <button class="btn primary modal-btn" disabled="{{attackBusy}}" bindtap="closeAttackModal">{{attackBusy ? '结算中' : '知道了'}}</button>
+    </view>
+  </view>
+
+  <view class="modal-mask" wx:if="{{selectedPlayer}}" bindtap="closePlayerDetail">
+    <view class="player-modal" catchtap="noop">
+      <view class="modal-head">
+        <view>
+          <view class="title small">{{selectedPlayer.seat_no}}号 {{selectedPlayer.player_name}}</view>
+          <view class="subtle">{{selectedPlayer.faction}} · {{labels.character || '卡片'}} {{selectedPlayer.ally_count}} 张</view>
+        </view>
+        <button class="btn light compact close-btn" bindtap="closePlayerDetail">关闭</button>
+      </view>
+      <view class="modal-metric-grid">
+        <view class="metric"><view class="metric-value">{{selectedPlayer.grain}}</view><view class="metric-label">{{labels.grainStat || '体力'}}</view></view>
+        <view class="metric"><view class="metric-value">{{selectedPlayer.silver}}</view><view class="metric-label">{{labels.silverStat || '银两'}}</view></view>
+        <view class="metric"><view class="metric-value">{{selectedPlayer.prestige}}</view><view class="metric-label">{{labels.prestigeStat || '人气'}}</view></view>
+        <view class="metric"><view class="metric-value">{{selectedPlayer.battle}}</view><view class="metric-label">{{labels.battleStat || '打卡'}}</view></view>
+        <view class="metric"><view class="metric-value">{{selectedPlayer.position}}</view><view class="metric-label">{{labels.positionStat || '位置'}}</view></view>
+      </view>
+      <view class="character-grid" wx:if="{{selectedPlayer.ally_cards.length}}">
+        <view class="character-card" wx:for="{{selectedPlayer.ally_cards}}" wx:key="id" catchtap="openCharacterDetail" data-player-id="{{selectedPlayer.id}}" data-character-id="{{item.id}}">
+          <image class="character-thumb" src="{{item.image_path}}" mode="aspectFill" />
+          <view class="character-name">{{item.name}}</view>
+          <view class="character-sub">{{item.role_type}} · {{item.tier}}</view>
+        </view>
+      </view>
+      <view class="empty-character" wx:else>暂无{{labels.character || '人物卡'}}</view>
+    </view>
+  </view>
+
+  <view class="modal-mask character-mask" wx:if="{{selectedCharacter}}" bindtap="closeCharacterDetail">
+    <view class="character-modal" catchtap="noop">
+      <image class="character-large" src="{{selectedCharacter.image_path}}" mode="aspectFit" />
+      <view class="title small">{{selectedCharacter.name}}</view>
+      <view class="subtle">{{selectedCharacter.tier}} · {{selectedCharacter.faction}} · {{selectedCharacter.role_type}}</view>
+      <view class="modal-actions character-modal-actions modal-actions-top">
+        <button class="btn secondary compact" bindtap="playEventCharacterVoice">播放{{labels.cardVoiceLabel || '人物语音'}}</button>
+        <button class="btn primary compact" bindtap="closeCharacterDetail">返回</button>
+      </view>
+      <view class="character-stats">
+        <text>{{labels.forceStat || '热度'}} {{selectedCharacter.force_value}}</text>
+        <text>{{labels.strategyStat || '口碑'}} {{selectedCharacter.strategy_value}}</text>
+        <text>{{labels.fameStat || '人气'}} {{selectedCharacter.fame_value}}</text>
+        <text>{{labels.commandStat || '传承'}} {{selectedCharacter.command_value}}</text>
+      </view>
+      <view class="settlement-card" wx:if="{{selectedCharacter.detail_desc}}">{{selectedCharacter.detail_desc}}</view>
+      <view class="settlement-card">名言：{{selectedCharacter.quote_text}}</view>
+      <view class="settlement-card">{{selectedCharacter.skill_name}}：{{selectedCharacter.skill_desc}}</view>
+    </view>
+  </view>
+
+  <view class="modal-mask" wx:if="{{manualDiceVisible}}" bindtap="closeManualDice">
+    <view class="settlement-modal" catchtap="noop">
+      <view class="modal-head">
+        <view>
+          <view class="title small">选择线下掷出的点数</view>
+          <view class="subtle">玩家先在线下掷骰，再在这里点选结果</view>
+        </view>
+        <button class="btn light compact close-btn" bindtap="closeManualDice">关闭</button>
+      </view>
+      <view class="count-row">
+        <view wx:for="{{manualDiceOptions}}" wx:key="*this" class="count-chip active" data-total="{{item}}" bindtap="selectManualDice">{{item}}点</view>
+      </view>
+    </view>
+  </view>
+</view>

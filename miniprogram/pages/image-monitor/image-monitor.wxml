@@ -1,0 +1,48 @@
+<view class="page page-image-monitor" style="{{pageBackgroundStyle}}">
+  <view class="stage">
+    <view class="top-plaque" wx:if="{{hasBatch}}">
+      <view class="title">本地素材规划</view>
+      <view class="subtle">{{batch.batch_name}} · {{batch.status}}</view>
+    </view>
+    <view class="panel monitor-head" wx:if="{{hasBatch}}">
+      <view class="row">
+        <view class="big-percent">{{batch.progress}}%</view>
+        <button class="btn light compact" bindtap="showBatchList">返回列表</button>
+      </view>
+      <view class="progress">
+        <view class="progress-inner" style="width: {{batch.progress}}%;"></view>
+      </view>
+      <view class="counts">总 {{batch.total_count}} · 已保存 {{batch.success_count}} · 本地缓存</view>
+    </view>
+
+    <view class="panel" wx:if="{{!hasBatch}}">
+      <view class="row">
+        <view class="title small">本地批次</view>
+        <button class="btn light compact" bindtap="clearLocalBatches">清空</button>
+      </view>
+      <view class="batch-row" wx:for="{{batches}}" wx:key="id" bindtap="openBatch" data-id="{{item.id}}">
+        <view class="seal">{{item.id}}</view>
+        <view class="batch-main">
+          <view>{{item.batch_name}}</view>
+          <view class="subtle">{{item.status}} · {{item.updated_at}}</view>
+        </view>
+        <view class="tag">{{item.progress}}%</view>
+      </view>
+    </view>
+
+    <view class="task-card" wx:for="{{jobs}}" wx:key="id">
+      <image class="preview" wx:if="{{item.preview}}" src="{{item.preview}}" mode="aspectFill" />
+      <view class="task-main">
+        <view class="row">
+          <view class="name">{{item.title}}</view>
+          <view class="tag">{{item.status}}</view>
+        </view>
+        <view class="progress">
+          <view class="progress-inner" style="width: {{item.progress}}%;"></view>
+        </view>
+        <view class="subtle">{{item.assetType}} · {{item.size}}</view>
+        <view class="prompt-copy">{{item.prompt}}</view>
+      </view>
+    </view>
+  </view>
+</view>

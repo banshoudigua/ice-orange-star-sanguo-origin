@@ -1,0 +1,37 @@
+# ===== 本地密钥与环境 =====
+.env
+.env.local
+*.key
+*.pem
+
+# ===== Node 依赖与本地数据库 =====
+node_modules/
+backend/node_modules/
+backend/data/*.sqlite
+backend/data/*.sqlite-*
+miniprogram/project.private.config.json
+backend/public/uploads/images/*
+!backend/public/uploads/images/t2_menjiang_avatar.png
+
+# ===== 生成中间产物（开源版不入库）=====
+output/imagegen/
+output/tmp/
+output/print-map/
+output/themes/
+output/playwright/
+output/dice-unified/
+output/event-regenerate/
+output/theme-map-html/
+output/cdn-upload-final-original-backup/
+output/imagegen/*_response.json
+
+# ===== 工具缓存 =====
+__pycache__/
+*.pyc
+.codex/
+.agents/
+.workbuddy/
+
+# ===== 常见本地临时文件 =====
+.DS_Store
+Thumbs.db

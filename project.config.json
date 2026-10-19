@@ -1,0 +1,22 @@
+{
+  "miniprogramRoot": "miniprogram/",
+  "projectname": "林同学的桌游助手",
+  "description": "三国主题桌游辅助微信小程序",
+  "appid": "wxYOUR_APPID_000000",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "postcss": true,
+    "minified": false
+  },
+  "packOptions": {
+    "ignore": [
+      {
+        "type": "folder",
+        "value": "miniprogram/assets/chaoshan"
+      }
+    ]
+  },
+  "compileType": "miniprogram",
+  "libVersion": "3.15.2"
+}

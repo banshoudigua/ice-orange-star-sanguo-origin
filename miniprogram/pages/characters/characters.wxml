@@ -1,0 +1,65 @@
+<view class="page page-characters" style="{{pageBackgroundStyle}}">
+  <view class="stage">
+    <view class="top-plaque">
+      <view class="title">{{labels.characterPlural || labels.character || '人物卡'}}一览</view>
+      <view class="subtle">{{theme.title}} · {{theme.subtitle}}</view>
+    </view>
+    <view class="filter-rail">
+      <view class="tag {{activeTier === '全部' ? 'active' : ''}}" data-tier="全部" bindtap="onTierTap">全部</view>
+      <view class="tag {{activeTier === 'T1' ? 'active' : ''}}" data-tier="T1" bindtap="onTierTap">T1</view>
+      <view class="tag {{activeTier === 'T2' ? 'active' : ''}}" data-tier="T2" bindtap="onTierTap">T2</view>
+      <view class="tag {{activeTier === 'T3' ? 'active' : ''}}" data-tier="T3" bindtap="onTierTap">T3</view>
+    </view>
+    <view class="card-grid">
+      <view class="person-card" wx:for="{{characters}}" wx:key="id" data-id="{{item.id}}" bindtap="openCharacterDetail">
+        <view class="tier-ribbon">{{item.tier}}</view>
+        <image class="avatar" wx:if="{{item.preview}}" src="{{item.preview}}" mode="aspectFill" />
+        <view class="portrait-fallback" wx:else>{{item.name}}</view>
+        <view class="name">{{item.name}}</view>
+        <view class="subtle">{{item.faction}} · {{item.role_type}}</view>
+        <view class="stat-line">
+          <text>{{labels.forceShort || '武'}}{{item.force_value}}</text>
+          <text>{{labels.strategyShort || '智'}}{{item.strategy_value}}</text>
+          <text>{{labels.commandShort || '统'}}{{item.command_value}}</text>
+        </view>
+        <view class="skill">{{item.skill_name}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="detail-mask" wx:if="{{selectedCharacter}}" bindtap="closeCharacterDetail">
+    <view class="detail-panel" catchtap="noop">
+      <view class="detail-actions detail-actions-top">
+        <button class="detail-btn light" wx:if="{{selectedCharacter.sound_path}}" bindtap="playCharacterVoice">播放详细介绍</button>
+        <button class="detail-btn light" wx:if="{{selectedCharacter.sound_path}}" bindtap="pauseCharacterVoice">暂停播放</button>
+        <button class="detail-btn light" bindtap="previewCharacterImage">查看大图</button>
+        <button class="detail-btn" bindtap="closeCharacterDetail">关闭</button>
+      </view>
+      <scroll-view class="detail-scroll" scroll-y>
+        <view class="detail-hero">
+          <image class="detail-image" src="{{selectedCharacter.image_path}}" mode="aspectFit" bindtap="previewCharacterImage" />
+          <view class="detail-tier">{{selectedCharacter.tier}}</view>
+        </view>
+        <view class="detail-body">
+          <view class="detail-name">{{selectedCharacter.name}}</view>
+          <view class="detail-sub">{{selectedCharacter.faction}} · {{selectedCharacter.role_type}}</view>
+          <view class="detail-quote">“{{selectedCharacter.quote_text}}”</view>
+          <view class="detail-section">
+            <view class="detail-section-title">卡片介绍</view>
+            <view class="detail-copy">{{selectedCharacter.intro_text}}</view>
+          </view>
+          <view class="detail-stats">
+            <view class="detail-stat"><text>{{labels.forceStat || '热度'}}</text><text>{{selectedCharacter.force_value}}</text></view>
+            <view class="detail-stat"><text>{{labels.strategyStat || '口碑'}}</text><text>{{selectedCharacter.strategy_value}}</text></view>
+            <view class="detail-stat"><text>{{labels.fameStat || '人气'}}</text><text>{{selectedCharacter.fame_value}}</text></view>
+            <view class="detail-stat"><text>{{labels.commandStat || '传承'}}</text><text>{{selectedCharacter.command_value}}</text></view>
+          </view>
+          <view class="detail-section">
+            <view class="detail-section-title">{{selectedCharacter.skill_name}}</view>
+            <view class="detail-copy">{{selectedCharacter.skill_desc}}</view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+</view>

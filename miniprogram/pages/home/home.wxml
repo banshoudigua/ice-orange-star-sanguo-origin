@@ -1,0 +1,302 @@
+<view class="page page-home home-page" style="{{pageBackgroundStyle}}">
+  <view class="stage home-stage {{setupStep === 'options' ? 'options-mode' : 'theme-mode'}}">
+    <view class="setup-guide">
+      <view class="guide-step {{setupStep === 'theme' ? 'active' : ''}}">
+        <view class="guide-step-no">1</view>
+        <view>
+          <view class="guide-step-title">选择主题</view>
+          <view class="guide-step-desc">先决定这局玩哪套世界观和卡牌内容</view>
+        </view>
+      </view>
+      <view class="guide-line"></view>
+      <view class="guide-step {{setupStep === 'options' ? 'active' : ''}}">
+        <view class="guide-step-no">2</view>
+        <view>
+          <view class="guide-step-title">设置游戏</view>
+          <view class="guide-step-desc">再配置人数、回合、掷点和胜利目标</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="theme-showcase" wx:if="{{setupStep === 'theme'}}">
+      <view class="theme-swiper-shell" wx:if="{{themes.length}}">
+        <swiper class="theme-swiper" current="{{currentThemeIndex}}" circular="{{true}}" bindchange="onThemeSwiperChange">
+          <swiper-item class="theme-swiper-item" wx:for="{{themes}}" wx:key="id">
+            <view class="theme-hero-card {{currentThemeId === item.id ? 'active' : ''}}" data-theme-id="{{item.id}}" bindtap="onThemeCardTap">
+              <image class="theme-hero-image" src="{{item.heroImage}}" mode="aspectFill" />
+              <view class="theme-hero-mask"></view>
+              <view class="theme-hero-copy">
+                <view class="theme-card-title">{{item.title}}</view>
+                <view class="theme-card-sub">{{item.subtitle}}</view>
+                <view class="theme-card-desc">{{item.description}}</view>
+              </view>
+            </view>
+          </swiper-item>
+        </swiper>
+      </view>
+      <view class="theme-meta" wx:if="{{currentTheme}}">
+        <view class="theme-meta-copy">
+          <view class="theme-meta-label">当前选择</view>
+          <view class="theme-meta-title">{{currentTheme.title}}</view>
+          <view class="theme-meta-sub">{{currentTheme.subtitle}}</view>
+          <view class="theme-meta-desc">{{currentTheme.isTool ? '选择后直接进入掷骰器，不进入对局设置。' : '选择后会进入本主题的开局设置；同一个房间开始后不可再改主题。'}}</view>
+        </view>
+        <view class="theme-meta-actions">
+          <view class="theme-action-btn theme-map-btn" wx:if="{{!currentTheme.isTool}}" bindtap="goThemeMap">主题地图 下载/打印</view>
+          <view class="theme-action-btn theme-next-btn {{currentTheme.isTool ? 'full' : ''}}" bindtap="goSetupOptions">{{currentTheme.isTool ? (currentTheme.toolButtonText || '进入工具') : '选择该主题'}}</view>
+        </view>
+      </view>
+      <view class="theme-choice-panel">
+        <view class="theme-choice-head">
+          <view class="theme-choice-title">全部主题</view>
+          <view class="theme-choice-tip">点卡片切换</view>
+        </view>
+        <view class="theme-choice-grid">
+          <view wx:for="{{themes}}" wx:key="id" class="theme-choice-card {{currentThemeId === item.id ? 'active' : ''}}" data-theme-id="{{item.id}}" bindtap="onThemeChoiceTap">
+            <image class="theme-choice-thumb" src="{{item.heroThumb || item.heroImage}}" mode="aspectFill" />
+            <view class="theme-choice-main">
+              <view class="theme-choice-name">{{item.title}}</view>
+              <view class="theme-choice-sub">{{item.subtitle}}</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="command-table" wx:if="{{setupStep === 'options' && !currentTheme.isTool}}">
+      <view class="selected-theme-card">
+        <view class="selected-theme-summary">
+          <image class="selected-theme-thumb" src="{{currentTheme.heroThumb || currentTheme.heroImage}}" mode="aspectFill" />
+          <view class="selected-theme-main">
+            <view class="selected-theme-label">当前主题</view>
+            <view class="selected-theme-title">{{currentTheme.title}}</view>
+            <view class="selected-theme-desc">{{currentTheme.description}}</view>
+          </view>
+        </view>
+        <button class="change-theme-btn" bindtap="backToThemeStep">重选主题</button>
+      </view>
+
+      <view class="setup-section">
+        <view class="setup-title">同屏玩家人数</view>
+      </view>
+      <view class="count-row single-row">
+        <view wx:for="{{playerCountOptions}}" wx:key="value" class="count-chip option-chip {{playerCount === item.value ? 'active' : ''}}" data-count="{{item.value}}" bindtap="onPlayerCountTap">
+          <view class="option-label">{{item.label}}</view>
+        </view>
+      </view>
+
+      <view class="setup-section compact-top">
+        <view class="setup-title">初始{{themeLabels.character || '人物卡'}}选择</view>
+        <view class="setup-desc" wx:if="{{isFlightTheme}}">每名玩家选择 1 张历史人物卡作为旅行队代表；线下仍按每人 4 枚棋子游玩。</view>
+        <view class="setup-desc" wx:else>每名玩家先选择 1 张初始{{themeLabels.character || '人物卡'}}，会直接成为玩家身份和开局收藏。</view>
+      </view>
+      <view class="seat-list">
+        <view class="seat-row" wx:for="{{players}}" wx:key="index">
+          <view class="seat-no">{{index + 1}}</view>
+          <view class="seat-picker">
+            <view class="seat-character" data-index="{{index}}" bindtap="openCharacterPicker">
+              <image class="seat-avatar" wx:if="{{item.character.image_path}}" src="{{item.character.image_path}}" mode="aspectFill" />
+              <view class="seat-avatar fallback" wx:else>选</view>
+              <view class="seat-main">
+                <view class="seat-name">{{item.playerName}}</view>
+                <view class="seat-meta">{{item.faction}} · {{item.character.role_type}}</view>
+                <view class="seat-stats" wx:if="{{item.character.id}}">
+                  <text>{{themeLabels.forceShort || '武'}} {{item.character.force_value}}</text>
+                  <text>{{themeLabels.strategyShort || '智'}} {{item.character.strategy_value}}</text>
+                  <text>{{themeLabels.fameShort || '名'}} {{item.character.fame_value}}</text>
+                  <text>{{themeLabels.commandShort || '统'}} {{item.character.command_value}}</text>
+                </view>
+              </view>
+              <view class="seat-change">更换</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="flight-setup-panel" wx:if="{{isFlightTheme}}">
+        <view class="setup-section">
+          <view class="setup-title">飞行棋专属规则</view>
+          <view class="setup-desc">本主题以传统飞行棋棋盘为准，每人固定 4 枚棋子。实体棋子线下移动，小程序负责掷骰、提示和记录。</view>
+        </view>
+        <view class="flight-fixed-card">
+          <view class="flight-fixed-value">{{flightPieceCount}}</view>
+          <view>
+            <view class="flight-fixed-title">每人棋子数</view>
+            <view class="flight-fixed-desc">固定 4 枚，已到终点的棋子不会被连续三个 6 送回机场。</view>
+          </view>
+        </view>
+        <view class="setup-section compact-top">
+          <view class="setup-title">起飞规则</view>
+        </view>
+        <view class="count-row">
+          <view wx:for="{{flightStartModeOptions}}" wx:key="value" class="count-chip flight-chip {{flightStartMode === item.value ? 'active' : ''}}" data-mode="{{item.value}}" bindtap="onFlightStartModeTap">
+            <view class="option-label">{{item.label}}</view>
+            <view class="option-desc">{{item.desc}}</view>
+          </view>
+        </view>
+        <view class="setup-section compact-top">
+          <view class="setup-title">撞机规则</view>
+        </view>
+        <view class="count-row">
+          <view wx:for="{{flightCollisionModeOptions}}" wx:key="value" class="count-chip flight-chip {{flightCollisionMode === item.value ? 'active' : ''}}" data-mode="{{item.value}}" bindtap="onFlightCollisionModeTap">
+            <view class="option-label">{{item.label}}</view>
+            <view class="option-desc">{{item.desc}}</view>
+          </view>
+        </view>
+        <view class="setup-section compact-top">
+          <view class="setup-title">景点出现方式</view>
+        </view>
+        <view class="count-row">
+          <view wx:for="{{flightSpotModeOptions}}" wx:key="value" class="count-chip flight-chip {{flightSpotMode === item.value ? 'active' : ''}}" data-mode="{{item.value}}" bindtap="onFlightSpotModeTap">
+            <view class="option-label">{{item.label}}</view>
+            <view class="option-desc">{{item.desc}}</view>
+          </view>
+        </view>
+      </view>
+
+      <view class="setup-section">
+        <view class="setup-title">总回合数</view>
+      </view>
+      <view class="count-row single-row">
+        <view wx:for="{{roundOptions}}" wx:key="value" class="count-chip round-chip {{maxRound === item.value ? 'active' : ''}}" data-round="{{item.value}}" bindtap="onRoundTap">
+          <view class="option-label">{{item.label}}</view>
+        </view>
+      </view>
+
+      <view class="custom-round-row">
+        <view class="custom-round-label">自定义回合数</view>
+        <input class="custom-round-input" type="number" value="{{customRoundInput}}" placeholder="1-99" bindinput="onCustomRoundInput" bindblur="onCustomRoundBlur" />
+      </view>
+
+      <view class="setup-section">
+        <view class="setup-title">掷点方式</view>
+        <view class="setup-desc">决定点数从哪里来。新手建议系统自动掷点，流程更连贯。</view>
+      </view>
+      <view class="count-row">
+        <view wx:for="{{diceModeOptions}}" wx:key="value" class="count-chip dice-chip {{diceMode === item.value ? 'active' : ''}}" data-mode="{{item.value}}" bindtap="onDiceModeTap">
+          <view class="option-label">{{item.label}}</view>
+          <view class="option-desc">{{item.desc}}</view>
+        </view>
+      </view>
+
+      <view class="setup-section">
+        <view class="setup-title">最终胜利目标</view>
+        <view class="setup-desc victory-desc-main">选择这局最看重的成长方向。每个目标都会直接说明达到多少就算赢。</view>
+      </view>
+      <view class="victory-grid">
+        <view wx:for="{{victoryOptions}}" wx:key="type" class="victory-chip {{victoryType === item.type ? 'active' : ''}}" data-type="{{item.type}}" bindtap="onVictoryTap">
+          <view>{{item.label}}</view>
+          <view class="victory-desc">{{item.desc}}</view>
+        </view>
+      </view>
+
+      <view class="victory-target-row">
+        <view>目标数值</view>
+        <input class="victory-input" type="number" value="{{victoryTarget}}" bindinput="onVictoryTargetInput" bindblur="onVictoryTargetBlur" />
+      </view>
+
+      <view class="save-row" wx:if="{{hasSavedGame}}">
+        <view>
+          <view class="save-title">进行中的本地对局</view>
+          <view class="save-desc">{{savedGameThemeTitle}} · {{savedGameText}}</view>
+        </view>
+        <button class="btn secondary save-btn" bindtap="continueGame">继续</button>
+      </view>
+      <button class="btn light join-btn" wx:if="{{hasSavedGame}}" bindtap="restartGame">清空缓存对局</button>
+
+    </view>
+
+    <view class="floating-start-bar" wx:if="{{setupStep === 'options' && !currentTheme.isTool}}">
+      <view class="start-theme-btn" bindtap="createRoom">进入游戏</view>
+    </view>
+
+    <view class="dock" wx:if="{{setupStep === 'theme' && !currentTheme.isTool}}">
+      <view class="dock-item" wx:for="{{dockItems}}" wx:key="key" data-key="{{item.key}}" bindtap="onDockTap">
+        <view class="seal">{{item.seal}}</view>
+        <view>{{item.text}}</view>
+      </view>
+      <button class="dock-item dock-share" open-type="share"><view class="seal">享</view><view>分享</view></button>
+    </view>
+  </view>
+
+  <view class="home-modal-mask" wx:if="{{gameplayGuideVisible}}" bindtap="closeGameplayGuide">
+    <view class="gameplay-modal" catchtap="noop">
+      <view class="modal-head">
+        <view>
+          <view class="guide-modal-title">{{themeLabels.gameplay || '玩法介绍'}}</view>
+          <view class="guide-modal-sub">点图片可查看大图</view>
+        </view>
+        <button class="guide-close-btn" bindtap="closeGameplayGuide">关闭</button>
+      </view>
+      <scroll-view class="guide-modal-scroll" scroll-y>
+        <view class="guide-modal-card" wx:for="{{gameplaySlides}}" wx:key="title">
+          <image class="guide-modal-image" src="{{item.image}}" mode="aspectFill" data-index="{{index}}" bindtap="openGuideImage" />
+          <view class="guide-modal-name">{{item.title}}</view>
+          <view class="guide-modal-desc">{{item.desc}}</view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <view class="home-modal-mask image-mask" wx:if="{{selectedGuideImage}}" bindtap="closeGuideImage">
+    <view class="guide-image-modal" catchtap="noop">
+      <image class="guide-large-image" src="{{selectedGuideImage.image}}" mode="aspectFit" />
+      <view class="guide-modal-name">{{selectedGuideImage.title}}</view>
+      <view class="guide-modal-desc">{{selectedGuideImage.desc}}</view>
+      <button class="guide-close-btn wide" bindtap="closeGuideImage">返回</button>
+    </view>
+  </view>
+
+  <view class="home-modal-mask character-picker-mask" wx:if="{{characterPickerVisible}}" bindtap="closeCharacterPicker">
+    <view class="character-picker-modal" catchtap="noop">
+      <view class="modal-head">
+        <view>
+          <view class="guide-modal-title">选择初始{{themeLabels.character || '人物卡'}}</view>
+          <view class="guide-modal-sub">{{characterPickerSeatLabel}} · 已被其他玩家选择的卡片不可重复</view>
+        </view>
+        <button class="guide-close-btn" bindtap="closeCharacterPicker">关闭</button>
+      </view>
+      <scroll-view class="character-picker-scroll" scroll-y>
+        <view class="picker-character-card {{item.disabled ? 'disabled' : ''}} {{item.selected ? 'selected' : ''}}" wx:for="{{characterPickerOptions}}" wx:key="id" data-character-id="{{item.id}}" bindtap="selectCharacterFromModal">
+          <image class="picker-character-art" src="{{item.image_path}}" mode="aspectFill" />
+          <view class="picker-character-main">
+            <view class="picker-character-head">
+              <view>
+                <view class="picker-character-name">{{item.name}}</view>
+                <view class="picker-character-meta">{{item.tier}} · {{item.faction}} · {{item.role_type}}</view>
+              </view>
+              <view class="picker-character-badge">{{item.disabled ? '已占用' : (item.selected ? '已选择' : '可选')}}</view>
+            </view>
+            <view class="picker-character-stats">
+              <text>{{themeLabels.forceShort || '武'}} {{item.force_value}}</text>
+              <text>{{themeLabels.strategyShort || '智'}} {{item.strategy_value}}</text>
+              <text>{{themeLabels.fameShort || '名'}} {{item.fame_value}}</text>
+              <text>{{themeLabels.commandShort || '统'}} {{item.command_value}}</text>
+            </view>
+            <view class="picker-character-skill">{{item.skill_name}}：{{item.skill_desc}}</view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <view wx:if="{{introVisible}}" class="intro-mask">
+    <view class="intro-scroll">
+      <view class="intro-cloud cloud-a"></view>
+      <view class="intro-cloud cloud-b"></view>
+      <view class="intro-title">{{currentTheme.introTitle}}</view>
+      <view class="intro-era">{{currentTheme.introEra}}</view>
+      <view class="intro-divider"></view>
+      <view class="intro-text-window">
+        <view class="intro-text-roll" style="{{introRollStyle}}">
+          <view class="intro-line" wx:for="{{introLines}}" wx:key="index">{{item}}</view>
+        </view>
+      </view>
+      <view class="intro-progress"><view class="intro-progress-inner" style="width: {{introProgress}}%;"></view></view>
+      <view class="intro-actions">
+        <button class="intro-btn light" bindtap="skipIntro">跳过开场</button>
+        <button class="intro-btn" bindtap="replayIntro">{{introPlaying ? '重听' : '播放'}}</button>
+      </view>
+    </view>
+  </view>
+</view>

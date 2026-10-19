@@ -1,0 +1,79 @@
+<view class="page page-events" style="{{pageBackgroundStyle}}">
+  <view class="stage">
+    <view class="top-plaque">
+      <view class="row">
+        <view>
+          <view class="title">{{labels.cityPlural || labels.city || '景点'}}一览</view>
+          <view class="subtle">{{theme.title}} · {{cities.length}} 个地点 · 点卡片切换</view>
+        </view>
+        <button class="btn light compact" bindtap="previewCityImage">看大图</button>
+      </view>
+    </view>
+    <view class="event-focus" wx:if="{{current}}">
+      <view class="event-art large" wx:if="{{current.image_path}}">
+        <image class="event-cover" src="{{current.image_path}}" mode="aspectFit" />
+      </view>
+      <view class="event-seal" wx:if="{{!isFlightTheme}}">Lv.{{current.level}}</view>
+      <view class="event-seal" wx:else>打卡</view>
+      <view class="tag focus-tag">第 {{current.position}} 格</view>
+      <view class="title small">{{current.name}}</view>
+      <view class="subtle" wx:if="{{isFlightTheme}}">{{current.region}} · 建议固定景点格 · 可用于景点印章打卡</view>
+      <view class="subtle" wx:else>{{labels.tollLabel || '过路费'}} {{current.toll}} · 购买 {{current.price}} · {{labels.defenseStat || '防御'}} {{current.defense}}</view>
+      <view class="event-desc">{{current.desc}}</view>
+      <view class="event-action" wx:if="{{current.history_desc}}">{{current.history_desc}}</view>
+    </view>
+    <view class="event-board">
+      <view class="event-card" wx:for="{{cities}}" wx:key="id" data-index="{{index}}" bindtap="selectCity">
+        <view class="event-art" wx:if="{{item.image_path}}">
+          <image class="event-thumb" src="{{item.image_path}}" mode="aspectFit" />
+        </view>
+        <view class="row">
+          <view class="name">{{item.name}}</view>
+          <view class="tag">第{{item.position}}格</view>
+        </view>
+        <view class="subtle" wx:if="{{isFlightTheme}}">{{item.region}} · 景点打卡</view>
+        <view class="subtle" wx:else>购买 {{item.price}} · {{labels.tollLabel || '过路费'}} {{item.toll}} · {{labels.defenseStat || '防御'}} {{item.defense}}</view>
+        <view class="desc">{{item.desc}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="modal-mask city-detail-mask" wx:if="{{detailVisible && selectedCity}}" bindtap="closeCityDetail">
+    <view class="city-detail-card" catchtap="noop">
+      <view class="modal-head">
+        <view>
+          <view class="title small">{{selectedCity.name}}</view>
+          <view class="subtle" wx:if="{{isFlightTheme}}">{{theme.title}} · 第 {{selectedCity.position}} 格 · {{selectedCity.region}}</view>
+          <view class="subtle" wx:else>{{theme.title}} · 第 {{selectedCity.position}} 格 · Lv.{{selectedCity.level}}</view>
+        </view>
+        <button class="btn light compact close-btn" bindtap="closeCityDetail">关闭</button>
+      </view>
+      <view class="modal-actions city-detail-actions city-detail-actions-top">
+        <button class="btn secondary compact" wx:if="{{selectedCity.sound_path}}" bindtap="playSelectedCityVoice">播放介绍</button>
+        <button class="btn light compact" wx:if="{{selectedCity.image_path}}" data-detail="1" bindtap="previewCityImage">查看大图</button>
+        <button class="btn primary compact" bindtap="closeCityDetail">知道了</button>
+      </view>
+      <image class="city-detail-art" wx:if="{{selectedCity.image_path}}" src="{{selectedCity.image_path}}" mode="widthFix" />
+      <view class="city-detail-meta" wx:if="{{!isFlightTheme}}">
+        <view><text>购买</text><strong>{{selectedCity.price}} 银两</strong></view>
+        <view><text>{{labels.tollLabel || '过路费'}}</text><strong>{{selectedCity.toll}} 银两</strong></view>
+        <view><text>{{labels.defenseStat || '防御'}}</text><strong>{{selectedCity.defense}}</strong></view>
+        <view><text>升级</text><strong>{{selectedCity.upgrade_cost}} 银两</strong></view>
+      </view>
+      <view class="city-detail-meta" wx:else>
+        <view><text>地区</text><strong>{{selectedCity.region}}</strong></view>
+        <view><text>格位</text><strong>第 {{selectedCity.position}} 格</strong></view>
+        <view><text>玩法</text><strong>景点印章</strong></view>
+        <view><text>模式</text><strong>固定/随机</strong></view>
+      </view>
+      <view class="city-detail-section">
+        <view class="detail-section-title">景点摘要</view>
+        <view class="detail-copy">{{selectedCity.desc}}</view>
+      </view>
+      <view class="city-detail-section" wx:if="{{selectedCity.history_desc}}">
+        <view class="detail-section-title">历史介绍</view>
+        <view class="detail-copy">{{selectedCity.history_desc}}</view>
+      </view>
+    </view>
+  </view>
+</view>

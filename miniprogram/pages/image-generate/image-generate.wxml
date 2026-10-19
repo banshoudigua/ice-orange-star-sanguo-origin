@@ -1,0 +1,22 @@
+<view class="page page-image-generate" style="{{pageBackgroundStyle}}">
+  <view class="stage">
+    <view class="top-plaque">
+      <view class="title">素材规划奏章</view>
+      <view class="subtle">人物卡 · 事件卡 · 棋盘图纸 · 本地缓存</view>
+    </view>
+    <view class="panel form-scroll">
+      <view class="form-label">规划批次</view>
+      <input class="field" placeholder="批次名称" value="{{batchName}}" bindinput="onBatchNameInput" />
+      <view class="form-label">每行一张素材提示词</view>
+      <textarea class="field textarea" value="{{promptsText}}" bindinput="onPromptsInput" />
+      <view class="prompt-tools">
+        <view class="tag green" bindtap="useBackgroundPrompts">页面背景</view>
+        <view class="tag">9:16</view>
+        <view class="tag">头像</view>
+        <view class="tag">事件</view>
+        <view class="tag">棋盘</view>
+      </view>
+      <button class="btn primary generate-btn" bindtap="createBatch">保存到本地缓存</button>
+    </view>
+  </view>
+</view>

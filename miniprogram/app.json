@@ -1,0 +1,20 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/room/room",
+    "pages/characters/characters",
+    "pages/cities/cities",
+    "pages/events/events",
+    "pages/dice-tool/dice-tool",
+    "pages/theme-map/theme-map"
+  ],
+  "window": {
+    "navigationBarTitleText": "林同学的桌游助手",
+    "navigationBarBackgroundColor": "#9f3a1c",
+    "navigationBarTextStyle": "white",
+    "navigationStyle": "default",
+    "backgroundColor": "#f7ecd7"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

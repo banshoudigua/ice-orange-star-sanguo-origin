@@ -1,0 +1,70 @@
+<view class="page page-map" style="{{pageBackgroundStyle}}">
+  <view class="stage map-stage" wx:if="{{theme}}">
+    <view class="top-plaque map-hero">
+      <view class="title">{{theme.mapTitle}}</view>
+      <view class="subtle">选择地图卡片后，可放大查看、拖动浏览与下载图片打印</view>
+    </view>
+
+    <view class="map-theme-tabs">
+      <view wx:for="{{themes}}" wx:key="id" class="map-theme-tab {{currentThemeId === item.id ? 'active' : ''}}" data-theme-id="{{item.id}}" bindtap="switchMapTheme">
+        <view class="map-theme-title">{{item.title}}</view>
+        <view class="map-theme-sub">{{item.subtitle}}</view>
+      </view>
+    </view>
+
+    <view class="panel map-option-panel">
+      <view class="map-option-head">
+        <view>
+          <view class="title small">地图版本</view>
+          <view class="map-option-note">点卡片查看大图和下载按钮</view>
+        </view>
+        <view class="map-option-count">{{mapOptions.length}} 张</view>
+      </view>
+      <view class="map-card-grid">
+        <view wx:for="{{mapOptions}}" wx:key="url" class="map-option-card {{item.selected ? 'active' : ''}}" data-index="{{index}}" bindtap="openMapViewer">
+          <image class="map-option-thumb" src="{{item.thumb || item.url}}" mode="aspectFill" />
+          <view class="map-option-main">
+            <view class="map-option-title">{{item.title}}</view>
+            <view class="map-option-desc">{{item.desc}}</view>
+            <view class="map-card-footer">
+              <view class="map-card-status">{{item.selected ? '当前查看' : '点击查看'}}</view>
+              <view class="map-card-arrow">›</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="panel map-tips">
+      <view class="title small">使用说明</view>
+      <view class="map-tip-copy">{{theme.mapPrintTip}}</view>
+      <view class="map-tip-copy">点地图可查看大图。下载后可自行打印，推荐优先彩色打印，黑白打印也可用于规则体验。</view>
+      <view class="map-tip-copy">建议先下载原图后再按 A4、A3 或 A2 尺寸排版打印，线下体验时可按桌面空间自由选择。</view>
+    </view>
+  </view>
+
+  <view class="map-viewer-mask" wx:if="{{mapViewerVisible}}" bindtap="closeMapViewer">
+    <view class="map-viewer" catchtap="noop">
+      <view class="map-viewer-head">
+        <view class="map-preview-main">
+          <view class="map-preview-label">正在查看</view>
+          <view class="map-preview-title">{{selectedMap.title || theme.mapTitle}}</view>
+          <view class="map-preview-desc">{{selectedMap.desc || '可拖动、缩放查看，下载后可自行打印。'}}</view>
+        </view>
+        <button class="map-close-btn" bindtap="closeMapViewer">关闭</button>
+      </view>
+      <view class="map-toolbar">
+        <view class="map-tool-btn light" bindtap="zoomOut">缩小</view>
+        <view class="map-tool-btn secondary" bindtap="resetZoom">重置</view>
+        <view class="map-tool-btn light" bindtap="zoomIn">放大</view>
+        <view class="map-tool-btn" bindtap="previewMap">原图</view>
+        <view class="map-tool-btn primary" bindtap="downloadMap">下载</view>
+      </view>
+      <movable-area class="map-area">
+        <movable-view class="map-view" direction="all" scale="true" scale-value="{{scale}}" scale-min="1" scale-max="3" out-of-bounds>
+          <image class="map-image" src="{{selectedMap.thumb || selectedMap.url || theme.mapPreviewImage || theme.mapImage}}" mode="widthFix" bindtap="previewMap" />
+        </movable-view>
+      </movable-area>
+    </view>
+  </view>
+</view>

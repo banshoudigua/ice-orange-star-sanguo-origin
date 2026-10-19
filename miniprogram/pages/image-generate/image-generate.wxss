@@ -1,0 +1,25 @@
+.textarea {
+  min-height: 360rpx;
+  line-height: 42rpx;
+}
+
+.form-label {
+  color: #693b18;
+  font-weight: 700;
+  margin-top: 12rpx;
+}
+
+.prompt-tools {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 16rpx 0;
+}
+
+.prompt-tools .tag {
+  margin-right: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.generate-btn {
+  margin-top: 18rpx;
+}
