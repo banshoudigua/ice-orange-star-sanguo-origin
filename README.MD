@@ -146,3 +146,7 @@ cd backend && npm test
 ## 声明
 
 本项目为个人桌游辅助工具，历史人物与事件素材均基于公开历史资料创作。仓库不含任何真实用户数据、密钥或私有服务配置。
+
+## License
+
+[MIT](./LICENSE) © 2026 banshoudigua
