@@ -10,13 +10,28 @@
 林同学的桌游助手：支持三国起源与潮汕游玩记双主题的微信小程序桌游辅助工具，提供主题地图、事件卡、人物/美食卡、本地对局和语音引导。
 ```
 
-## 棋盘预览
+## 界面预览
 
-三国起源主题的 30 格棋盘（A3 打印版，可在小程序内下载后线下打印使用）：
+以下为真实运行截图，取自微信开发者工具 iPhone 12/13 Pro 模拟器（390 × 753），三国起源主题、3 人局。
 
-![三国起源棋盘](docs/images/board-sanguo.png)
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/shot-home.jpg" width="240"><br><sub>① 首页 · 选择主题</sub></td>
+    <td align="center"><img src="docs/images/shot-setup.jpg" width="240"><br><sub>② 开局设置 · 人数 / 回合 / 初始卡</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/shot-room.jpg" width="240"><br><sub>③ 对局控制台 · 掷点 / 抽事件 / 结算</sub></td>
+    <td align="center"><img src="docs/images/shot-event.jpg" width="240"><br><sub>④ 落点事件 · 自动抽人物卡</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/shot-players.jpg" width="240"><br><sub>⑤ 玩家数值 · 资源与随从</sub></td>
+    <td align="center"><img src="docs/images/shot-cities.jpg" width="240"><br><sub>⑥ 城池 · 购买 / 升级 / 交费</sub></td>
+  </tr>
+</table>
 
-> 小程序界面截图待补充：需在微信开发者工具中运行本项目后截取真实界面。
+线下打印用的 30 格棋盘（A3 版，可在小程序内下载）：
+
+![三国起源棋盘](docs/images/board-sanguo.jpg)
 
 ## 运行前必改的配置
 
