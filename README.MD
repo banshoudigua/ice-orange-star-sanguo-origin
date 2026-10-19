@@ -10,6 +10,16 @@
 林同学的桌游助手：支持三国起源与潮汕游玩记双主题的微信小程序桌游辅助工具，提供主题地图、事件卡、人物/美食卡、本地对局和语音引导。
 ```
 
+## 界面预览
+
+六屏界面总览：开始房间、主持控制台、武将卡一览、事件卡一览、素材生成、生成监控。
+
+![界面总览](docs/images/ui-overview.png)
+
+三国起源主题的 30 格棋盘（A3 打印版，可在小程序内下载后线下打印使用）：
+
+![三国起源棋盘](docs/images/board-sanguo.png)
+
 ## 运行前必改的配置
 
 | 位置 | 占位符 | 说明 |
@@ -90,6 +100,7 @@ backend/data/                   本地 SQLite 数据目录（数据库文件不�
 tools/                          生成地图、素材处理等工具脚本
 output/scripts/                 素材批处理与压缩脚本
 docs/design/                    设计稿与素材清单
+docs/images/                    README 展示用界面截图与棋盘预览图
 ```
 
 > 说明：开源版不含生成中间产物与原始大图备份（`output/tmp`、`output/print-map`、`output/imagegen`、`output/cdn-upload-final-original-backup` 等），正式引用的图片与音频走 CDN。
